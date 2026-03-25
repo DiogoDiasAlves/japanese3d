@@ -42,21 +42,30 @@ async function init() {
 
         model = gltf.scene;
 
-        // ── Auto-fit to the 8-unit stone platform ──────────────────────────
-        const box    = new THREE.Box3().setFromObject(model);
-        const size   = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        const sc     = 10 / Math.max(size.x, size.y, size.z);
-
+        // ── Auto-fit and Align to Ground (y=0) ──────────────────────────
+        // 1. Initial scale calculation
+        const initialBox = new THREE.Box3().setFromObject(model);
+        const size = initialBox.getSize(new THREE.Vector3());
+        const sc = 10 / Math.max(size.x, size.y, size.z);
         model.scale.setScalar(sc);
-        // Sit the model ON the stone platform (y ≈ 0.35)
-        model.position.set(
-            -center.x * sc,
-            0.35 - (box.min.y * sc),
-            -center.z * sc
-        );
 
-        // Enable shadows on all meshes
+        // 2. Force matrices update so Box3 reads the true scaled world positions
+        model.updateMatrixWorld(true);
+
+        // 3. Recalculate exact bounds in world space
+        const scaledBox = new THREE.Box3().setFromObject(model);
+        const center = scaledBox.getCenter(new THREE.Vector3());
+
+        // 4. Align lowest point strictly to y=0, center X/Z
+        const baseY = model.position.y - scaledBox.min.y;
+        model.position.x += -center.x;
+        model.position.z += -center.z;
+        model.position.y = baseY;
+
+        // Save true calculated Y for animation
+        model.userData.baseY = baseY;
+
+        // ── Shadows ──
         model.traverse((node) => {
             if (node.isMesh) {
                 node.castShadow    = true;
@@ -96,8 +105,11 @@ function animate() {
 
     if (mixer) mixer.update(delta);
 
-    // Gentle idle float — just 4 cm travel
-    if (model) model.position.y = 0.35 + Math.sin(t * 0.5) * 0.04;
+    // Gentle idle float — only floats UP from the base surface, preventing floor clipping
+    if (model) {
+        // Math.abs ensures it never dips below the floor (baseY)
+        model.position.y = model.userData.baseY + Math.abs(Math.sin(t * 0.5)) * 0.08;
+    }
 
     tick();          // hover raycasting
     controls.update();

@@ -29,7 +29,6 @@ const mat = (color, rough = 0.85, metal = 0, emissive = null, emI = 0) => {
 // ─── Main Entry ──────────────────────────────────────────────────────────────
 export function buildEnvironment(scene) {
     buildGround(scene);
-    buildStonePlatform(scene);
     buildCherryBlossomsRing(scene);
     buildToriiGate(scene, -9.5, 0, 0, Math.PI * 0.5);
     buildToriiGate(scene, 0, 0, -9.5, 0);
@@ -37,30 +36,14 @@ export function buildEnvironment(scene) {
     buildPathStones(scene);
 }
 
-// ─── Ground disc ──────────────────────────────────────────────────────────────
+// ─── Ground disc (the floor) ──────────────────────────────────────────────────
 function buildGround(scene) {
     const geo  = new THREE.CircleGeometry(28, 64);
     const mesh = new THREE.Mesh(geo, mat(C.gravel, 0.95));
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.y = -0.05;
+    mesh.position.y = 0; // Exactly on zero
     mesh.receiveShadow = true;
     scene.add(mesh);
-}
-
-// ─── Raised stone platform the Tokyo model sits on ───────────────────────────
-function buildStonePlatform(scene) {
-    // Top face
-    const top  = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 0.35, 32), mat(C.stone, 0.9));
-    top.position.y = 0.175;
-    top.receiveShadow = true;
-    top.castShadow   = true;
-    scene.add(top);
-
-    // Rim edge (slightly larger, darker)
-    const rim  = new THREE.Mesh(new THREE.CylinderGeometry(8.2, 8.4, 0.2, 32), mat(C.stoneDark, 0.9));
-    rim.position.y = -0.05;
-    rim.receiveShadow = true;
-    scene.add(rim);
 }
 
 // ─── Cherry Blossom Trees ─────────────────────────────────────────────────────
